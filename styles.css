@@ -228,7 +228,7 @@ a:hover {
   .nav-links {
     position: fixed;
     left: 50px;
-    top: 8px;
+    top: 7px;
     z-index: 15;
     transform: none;
   }
