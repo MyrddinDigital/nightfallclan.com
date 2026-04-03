@@ -1,0 +1,59 @@
+.socialLinks {
+  display: flex;
+  gap: 30px;
+  flex-shrink: 0;
+  order: -1;
+
+  @media (min-width: 600px) {
+    order: 1;
+  }
+
+  @media (min-width: 768px) {
+    margin-left: 10px;
+  }
+}
+
+.socialLinks a {
+  color: #fff;
+  transition: all 100ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 0.7;
+  }
+
+  @media (prefers-color-scheme: light) {
+    color: #121215;
+  }
+}
+
+.icon {
+  height: 30px;
+  width: 30px;
+}
+
+.robloxLink .icon {
+  height: 26px;
+  width: 26px;
+  position: relative;
+  top: 2px;
+}
+
+.githubLink .icon {
+  height: 27px;
+  width: 27px;
+}
+
+@media (max-width: 768px) {
+  .socialLinks {
+    padding-right: 0;
+    gap: 30px;
+  }
+
+  .icon {
+    height: 25px;
+    width: 25px;
+  }
+}

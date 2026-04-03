@@ -1,0 +1,350 @@
+.component {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  border-radius: 12px;
+  background-color: #191a1f;
+  font-family: Helvetica, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.87);
+  position: fixed;
+  right: 12px;
+  top: 74px;
+  height: auto;
+  max-height: calc(100vh - 86px);
+  transform: translateX(calc(100% + 24px));
+  transition: transform 0.25s ease;
+  z-index: 30;
+  pointer-events: none;
+  visibility: hidden;
+
+  @media (min-width: 1000px) {
+    align-self: start;
+    position: sticky;
+    top: 110px;
+    width: 320px;
+    right: auto;
+    height: auto;
+    max-height: none;
+    z-index: auto;
+    transform: none;
+    pointer-events: auto;
+    visibility: visible;
+  }
+}
+
+.mobileOpen {
+  transform: translateX(0);
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.mobileDrawerToggle {
+  position: fixed;
+  right: 15px;
+  bottom: 14px;
+  z-index: 26;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f4ff;
+  color: #121215;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+
+  @media (min-width: 1000px) {
+    display: none;
+  }
+}
+
+.mobileDrawerIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.mobileDrawerToggleHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  border: none;
+  background: rgba(7, 8, 10, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 24;
+
+  @media (min-width: 1000px) {
+    display: none;
+  }
+}
+
+.backdropVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 20px 20px 16px;
+  position: relative;
+  overflow: hidden;
+  gap: 20px;
+}
+
+.fortSwap {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.fortLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+  filter: brightness(0.4) blur(4px);
+  opacity: 0.6;
+  will-change: transform, opacity, filter;
+}
+
+.fortIncoming {
+  animation: fortIn 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 1;
+}
+
+.fortOutgoing {
+  animation: fortOut 520ms ease forwards;
+  z-index: 2;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 10px;
+  flex: 1;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.logoSwap {
+  width: 40%;
+  height: 80px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.logoLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 80px;
+  object-fit: contain;
+  will-change: transform, opacity, filter;
+}
+
+.logoIncoming {
+  animation: logoIn 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 1;
+}
+
+.logoOutgoing {
+  animation: logoOut 420ms ease forwards;
+  z-index: 2;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: #fff;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.value {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.valueSwap {
+  position: relative;
+  min-height: 20px;
+}
+
+.valueLayer {
+  display: block;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.87);
+  transform-origin: left center;
+  will-change: transform, opacity, filter;
+}
+
+.valueIncoming {
+  animation: valueIn 360ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.valueOutgoing {
+  position: absolute;
+  inset: 0;
+  animation: valueOut 360ms ease forwards;
+}
+
+.descriptionSwap {
+  width: 100%;
+  height: 500px;
+  position: relative;
+  overflow: hidden;
+}
+
+.descriptionBody {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: left;
+  margin: 0;
+  padding: 20px;
+  max-height: calc(100vh - 220px);
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  @media (min-width: 1000px) {
+    position: absolute;
+    inset: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    will-change: transform, opacity, filter;
+  }
+}
+
+.descriptionIncoming {
+  animation: descIn 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 1;
+}
+
+.descriptionOutgoing {
+  animation: descOut 520ms ease forwards;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes fortIn {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+    filter: brightness(0.3) blur(7px);
+  }
+  to {
+    opacity: 0.6;
+    transform: scale(1);
+    filter: brightness(0.4) blur(4px);
+  }
+}
+
+@keyframes fortOut {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes logoIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9) rotate(-4deg);
+    filter: blur(1px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes logoOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.94);
+  }
+}
+
+@keyframes valueIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+    filter: blur(1px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes valueOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes descIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes descOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

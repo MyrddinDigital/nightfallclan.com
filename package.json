@@ -1,0 +1,26 @@
+{
+  "name": "wall.nightfallclan.com",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "deploy": "sst deploy --stage prod"
+  },
+  "dependencies": {
+    "apexcharts": "^5.10.4",
+    "next": "^16.2.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "sst": "^4.6.11"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "sass": "^1.89.2",
+    "typescript": "^6.0.2"
+  }
+}

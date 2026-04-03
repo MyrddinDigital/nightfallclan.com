@@ -1,0 +1,341 @@
+.chartWrapper {
+  max-height: 90vh;
+  width: 100%;
+  max-width: 95vw;
+  margin: 0 auto 2rem auto;
+}
+
+.chartLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+
+  p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+  }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #2d2d2d;
+  border-top-color: rgb(108, 149, 255);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chartControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0 15px 0 25px;
+}
+
+.filterToggle {
+  order: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  user-select: none;
+
+  input {
+    accent-color: rgb(108, 149, 255);
+    cursor: pointer;
+  }
+}
+
+.resolutionControl {
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  user-select: none;
+
+  input {
+    width: 180px;
+    accent-color: rgb(108, 149, 255);
+    cursor: pointer;
+
+    @media (max-width: 900px) {
+      width: 120px;
+    }
+  }
+}
+
+.chartBtns {
+  order: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.zoomBtns {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  order: 2;
+}
+
+.chartBtn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  color: #000;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (min-width: 901px) {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    border-radius: 50%;
+  }
+}
+
+.zoomToggleBtn {
+  @media (min-width: 901px) {
+    display: none;
+  }
+
+  &.active {
+    background: rgb(108, 149, 255);
+    color: #fff;
+  }
+}
+
+.viewPostsBtn {
+  order: 1;
+  border: none;
+  border-radius: 9999px;
+  background: rgb(108, 149, 255);
+  color: #fff;
+  padding: 0.45rem 0.85rem;
+  min-width: 136px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgb(92, 131, 230);
+  }
+
+  &.isHidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+.viewPostsBtn__spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.45rem;
+  vertical-align: text-bottom;
+  animation: spin 0.7s linear infinite;
+}
+
+.chartArea {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  aspect-ratio: 3 / 2;
+
+  &.hidden {
+    visibility: hidden;
+    height: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 900px) {
+  .chartWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .chartArea {
+    order: 1;
+  }
+
+  .chartControls {
+    order: 2;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+    margin-bottom: 0;
+  }
+
+  .filterToggle {
+    order: 3;
+    justify-self: start;
+    font-size: 0.95rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    &:has(input:checked) {
+      background: rgba(108, 149, 255, 0.25);
+      border-color: rgba(108, 149, 255, 0.6);
+      color: rgb(180, 200, 255);
+    }
+
+    input {
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+  }
+
+  .resolutionControl {
+    order: 2;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    justify-items: start;
+
+    input {
+      width: 100%;
+      max-width: none;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      margin-block: 0.5rem;
+      border-radius: 9999px;
+      background: linear-gradient(
+        to right,
+        rgb(108, 149, 255) var(--fill),
+        rgba(255, 255, 255, 0.15) var(--fill)
+      );
+      outline: none;
+
+      &::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 9999px;
+      }
+
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgb(108, 149, 255);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        margin-top: -8px;
+      }
+
+      &::-moz-range-track {
+        height: 6px;
+        border-radius: 9999px;
+        background: transparent;
+      }
+
+      &::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 50%;
+        background: rgb(108, 149, 255);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+      }
+    }
+  }
+
+  .chartBtns {
+    order: 1;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .zoomBtns {
+    order: 2;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .viewPostsBtn {
+    order: 1;
+    margin-left: 0;
+    height: 44px;
+  }
+}
+
+.chartContainer {
+  position: absolute;
+  inset: 0;
+}
+
+.dragZoomOverlay {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.dragZoomSelection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(108, 149, 255, 0.15);
+  border-left: 1px solid rgba(108, 149, 255, 0.6);
+  border-right: 1px solid rgba(108, 149, 255, 0.6);
+  pointer-events: none;
+}
+
+.minimap {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 160px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+
+  &.faded {
+    opacity: 0;
+  }
+
+  @media (max-width: 900px) {
+    width: 180px;
+    height: 50px;
+  }
+}
