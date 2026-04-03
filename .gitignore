@@ -4,6 +4,7 @@ node_modules
 # Next.js
 .next
 out
+.open-next
 
 # SST
 .sst
@@ -27,4 +28,5 @@ npm-debug.log*
 .codex
 
 # TS auto-generated files
+tsconfig.tsbuildinfo
 *.d.ts
