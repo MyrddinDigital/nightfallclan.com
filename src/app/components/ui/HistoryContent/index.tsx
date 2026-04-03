@@ -143,7 +143,7 @@ export default function HistoryContent() {
         Darxia&apos;s leadership heralded a transformative era for NFC, often
         celebrated by veterans as a golden chapter. His tenure was defined by
         bold structural reforms and rapid expansion, breathing new life into the
-        clan. Yet, this period of prosperity was not without its challenges.
+        clan. Yet, this period of prosperity was without its challenges.
         Soccerpr89&apos;s return and demand for ownership threatened to unravel
         Darxia&apos;s progress. Unwilling to cede control, Darxia accepted a
         financial settlement from Soccerpr89 but refused to transfer ownership,
