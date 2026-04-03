@@ -15,14 +15,13 @@ import { useScrollDirection } from "@hooks/useScrollDirection";
 import { useInfiniteScroll } from "@hooks/useInfiniteScroll";
 import PostCard from "@ui/PostCard";
 import postStyles from "@ui/PostCard/PostCard.module.scss";
-import { sanitizePosts, type Post, type SanitizedPost } from "@/app/utils/sanitize";
+import { sanitizePosts, type Post } from "@/app/utils/sanitize";
 import styles from "./WallView.module.scss";
 
 const POSTS_PER_LOAD = 20;
 const POSTS_PER_SKIP_SMALL = 100;
 const POSTS_PER_SKIP_LARGE = 1000;
 const SKELETON_COUNT = 15;
-const FETCH_DEBOUNCE_MS = 300;
 
 type WallViewProps = {
   onLatestDateShownChange?: (timestamp: number) => void;

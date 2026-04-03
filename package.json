@@ -1,10 +1,9 @@
 {
-  "name": "wall.nightfallclan.com",
-  "private": true,
-  "version": "1.0.0",
+  "name": "nightfallclan.com",
+  "private": false,
+  "version": "2.1.0",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npx tsx scripts/build-db.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

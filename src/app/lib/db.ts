@@ -5,7 +5,7 @@ let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!db) {
-    const dbPath = path.join(process.cwd(), "public", "data", "nfc.db");
+    const dbPath = path.join(process.cwd(), "data", "nfc.db");
     db = new Database(dbPath, { readonly: true });
     db.pragma("cache_size = -64000");
   }
