@@ -15,7 +15,7 @@ import { useScrollDirection } from "@hooks/useScrollDirection";
 import { useInfiniteScroll } from "@hooks/useInfiniteScroll";
 import PostCard from "@ui/PostCard";
 import postStyles from "@ui/PostCard/PostCard.module.scss";
-import { sanitizePosts, type Post, type SanitizedPost } from "@/app/utils/sanitize";
+import { sanitizePosts, type Post } from "@/app/utils/sanitize";
 import styles from "./WallView.module.scss";
 
 const POSTS_PER_LOAD = 20;
@@ -25,6 +25,13 @@ const SKELETON_COUNT = 15;
 
 type WallViewProps = {
   onLatestDateShownChange?: (timestamp: number) => void;
+};
+
+type ApiResponse = {
+  posts: Post[];
+  total: number;
+  offset: number;
+  contextIndex?: number;
 };
 
 function SkipArrowIcon({
@@ -91,6 +98,23 @@ function SkipArrowIcon({
   );
 }
 
+function buildFetchUrl(params: {
+  query: string;
+  queryUser: string;
+  dateFilter: { start?: number; end?: number } | null;
+  offset: number;
+  limit: number;
+}): string {
+  const url = new URL("/api/posts", window.location.origin);
+  if (params.queryUser) url.searchParams.set("from", params.queryUser);
+  if (params.dateFilter?.start != null) url.searchParams.set("after", String(params.dateFilter.start));
+  if (params.dateFilter?.end != null) url.searchParams.set("before", String(params.dateFilter.end));
+  if (params.query) url.searchParams.set("q", params.query);
+  url.searchParams.set("offset", String(params.offset));
+  url.searchParams.set("limit", String(params.limit));
+  return url.toString();
+}
+
 export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -98,11 +122,14 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   const mainRef = useRef<HTMLElement | null>(null);
   const [jumpButtonGroupLeft, setJumpButtonGroupLeft] = useState<number | null>(null);
 
+  // API-driven state
   const [posts, setPosts] = useState<Post[]>([]);
-  const [visibleStartIndex, setVisibleStartIndex] = useState(0);
-  const [visibleEndIndex, setVisibleEndIndex] = useState(POSTS_PER_LOAD);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [highlightedPostId, setHighlightedPostId] = useState(0);
   const latestDateShownRef = useRef<number | null>(null);
+  const fetchControllerRef = useRef<AbortController | null>(null);
+  const initialLoadDoneRef = useRef(false);
 
   const { scrollDirection } = useScrollDirection();
   const { query, queryUser, dateFilter } = useSearchParser(inputValue);
@@ -111,15 +138,72 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   const prevSearchRef = useRef({ query: "", queryUser: "", dateFilter: null as typeof dateFilter });
   const skipPaginationResetRef = useRef(false);
 
-  // Fetch posts
-  useMemo(() => {
-    fetch("/data/NFC.json")
-      .then((res) => res.json())
-      .then((data: Post[]) => {
-        setPosts(data);
-        setLoading(false);
+  // Core fetch function
+  const fetchPosts = useCallback(
+    async (fetchOffset: number, fetchLimit: number, append?: "top" | "bottom") => {
+      fetchControllerRef.current?.abort();
+      const controller = new AbortController();
+      fetchControllerRef.current = controller;
+
+      const url = buildFetchUrl({
+        query,
+        queryUser,
+        dateFilter,
+        offset: fetchOffset,
+        limit: fetchLimit,
       });
-  }, []);
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) return;
+        const data: ApiResponse = await res.json();
+
+        if (append === "top") {
+          setPosts((prev) => [...data.posts, ...prev]);
+        } else if (append === "bottom") {
+          setPosts((prev) => [...prev, ...data.posts]);
+        } else {
+          setPosts(data.posts);
+        }
+        setTotal(data.total);
+        setOffset(append === "top" ? fetchOffset : append === "bottom" ? offset : fetchOffset);
+        setLoading(false);
+        initialLoadDoneRef.current = true;
+      } catch (e: unknown) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setLoading(false);
+      }
+    },
+    [query, queryUser, dateFilter, offset, setLoading]
+  );
+
+  // Initial fetch and re-fetch when search changes
+  useEffect(() => {
+    const prev = prevSearchRef.current;
+    const searchChanged =
+      prev.query !== query ||
+      prev.queryUser !== queryUser ||
+      JSON.stringify(prev.dateFilter) !== JSON.stringify(dateFilter);
+
+    prevSearchRef.current = { query, queryUser, dateFilter };
+
+    if (!initialLoadDoneRef.current || searchChanged) {
+      if (skipPaginationResetRef.current) {
+        skipPaginationResetRef.current = false;
+        return;
+      }
+
+      setOffset(0);
+      setPosts([]);
+      setLoading(true);
+
+      if (searchChanged && (query || queryUser || dateFilter)) {
+        window.scrollTo(0, 0);
+      }
+
+      fetchPosts(0, POSTS_PER_LOAD);
+    }
+  }, [query, queryUser, dateFilter, fetchPosts, setLoading]);
 
   // Control body overflow during loading
   useEffect(() => {
@@ -128,58 +212,6 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
       document.body.style.overflow = "";
     };
   }, [loading]);
-
-  // Filter posts
-  const filteredPosts = useMemo(() => {
-    if (loading || !posts.length) return [];
-
-    let result = posts;
-
-    if (queryUser) {
-      result = result.filter((post) =>
-        post.poster?.user.username.toLowerCase().includes(queryUser.toLowerCase())
-      );
-    }
-
-    if (dateFilter) {
-      result = result.filter((post) => {
-        const ts = new Date(post.created).getTime();
-        if (isNaN(ts)) return false;
-        if (dateFilter.start != null && ts < dateFilter.start) return false;
-        if (dateFilter.end != null && ts >= dateFilter.end) return false;
-        return true;
-      });
-    }
-
-    if (query) {
-      result = result.filter((post) =>
-        post.body.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    return result;
-  }, [posts, query, queryUser, dateFilter, loading]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    const prev = prevSearchRef.current;
-    if (
-      prev.query !== query ||
-      prev.queryUser !== queryUser ||
-      JSON.stringify(prev.dateFilter) !== JSON.stringify(dateFilter)
-    ) {
-      if (skipPaginationResetRef.current) {
-        skipPaginationResetRef.current = false;
-      } else {
-        setVisibleStartIndex(0);
-        setVisibleEndIndex(POSTS_PER_LOAD);
-        if (query || queryUser || dateFilter) {
-          window.scrollTo(0, 0);
-        }
-      }
-    }
-    prevSearchRef.current = { query, queryUser, dateFilter };
-  }, [query, queryUser, dateFilter]);
 
   // Sync URL with search
   useEffect(() => {
@@ -191,22 +223,25 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   }, [inputValue, router, searchParams]);
 
   const currentPagePosts = useMemo(
-    () => sanitizePosts(filteredPosts.slice(visibleStartIndex, visibleEndIndex)),
-    [filteredPosts, visibleStartIndex, visibleEndIndex]
+    () => sanitizePosts(posts),
+    [posts]
   );
 
-  const showJumpToOldest = visibleStartIndex > 0;
-  const showJumpToNewest = visibleEndIndex < filteredPosts.length;
+  const showJumpToOldest = offset > 0;
+  const showJumpToNewest = offset + posts.length < total;
   const hasFilter = !!(queryUser || query || dateFilter);
 
   // Scroll position preservation ref for prepending
   const scrollHeightBeforePrepend = useRef<number | null>(null);
 
   const handleLoadTop = useCallback(() => {
-    if (visibleStartIndex <= 0) return;
+    if (offset <= 0) return;
     scrollHeightBeforePrepend.current = document.documentElement.scrollHeight;
-    setVisibleStartIndex((prev) => Math.max(0, prev - POSTS_PER_LOAD));
-  }, [visibleStartIndex]);
+    const newOffset = Math.max(0, offset - POSTS_PER_LOAD);
+    const fetchCount = offset - newOffset;
+    setOffset(newOffset);
+    fetchPosts(newOffset, fetchCount, "top");
+  }, [offset, fetchPosts]);
 
   // Preserve scroll position after prepending
   useLayoutEffect(() => {
@@ -216,22 +251,22 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
       window.scrollTo(0, document.documentElement.scrollTop + (newHeight - oldHeight));
       scrollHeightBeforePrepend.current = null;
     }
-  }, [visibleStartIndex]);
+  }, [posts]);
 
   const handleLoadBottom = useCallback(() => {
-    setVisibleEndIndex((prev) =>
-      Math.min(filteredPosts.length, prev + POSTS_PER_LOAD)
-    );
-  }, [filteredPosts.length]);
+    if (offset + posts.length >= total) return;
+    const newOffset = offset + posts.length;
+    fetchPosts(newOffset, POSTS_PER_LOAD, "bottom");
+  }, [offset, posts.length, total, fetchPosts]);
 
   const topSentinelRef = useInfiniteScroll(
     "top",
-    visibleStartIndex > 0,
+    offset > 0,
     handleLoadTop
   );
   const bottomSentinelRef = useInfiniteScroll(
     "bottom",
-    visibleEndIndex < filteredPosts.length,
+    offset + posts.length < total,
     handleLoadBottom
   );
 
@@ -335,16 +370,21 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   }, []);
 
   function jumpToOldest() {
-    setVisibleStartIndex(0);
-    setVisibleEndIndex(POSTS_PER_LOAD);
+    setOffset(0);
+    setPosts([]);
+    setLoading(true);
+    fetchPosts(0, POSTS_PER_LOAD);
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 50);
   }
 
   function jumpToNewest() {
-    setVisibleStartIndex(Math.max(0, filteredPosts.length - POSTS_PER_LOAD));
-    setVisibleEndIndex(filteredPosts.length);
+    const newOffset = Math.max(0, total - POSTS_PER_LOAD);
+    setOffset(newOffset);
+    setPosts([]);
+    setLoading(true);
+    fetchPosts(newOffset, POSTS_PER_LOAD);
     setTimeout(() => {
       window.scrollTo({
         top: document.documentElement.scrollHeight,
@@ -353,28 +393,31 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     }, 50);
   }
 
-  function skipPosts(offset: number) {
-    if (offset === 0 || filteredPosts.length === 0) return;
+  function skipPosts(skipAmount: number) {
+    if (skipAmount === 0 || total === 0) return;
 
-    const currentWindowSize = Math.max(POSTS_PER_LOAD, visibleEndIndex - visibleStartIndex);
+    const currentWindowSize = Math.max(POSTS_PER_LOAD, posts.length);
 
-    if (offset < 0) {
-      if (visibleStartIndex <= 0) return;
-      const nextStart = Math.max(0, visibleStartIndex + offset);
-      const nextEnd = Math.min(filteredPosts.length, nextStart + currentWindowSize);
-      setVisibleStartIndex(nextStart);
-      setVisibleEndIndex(nextEnd);
+    if (skipAmount < 0) {
+      if (offset <= 0) return;
+      const newOffset = Math.max(0, offset + skipAmount);
+      setOffset(newOffset);
+      setPosts([]);
+      setLoading(true);
+      fetchPosts(newOffset, Math.min(currentWindowSize, total - newOffset));
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }, 50);
       return;
     }
 
-    if (visibleEndIndex >= filteredPosts.length) return;
-    const nextEnd = Math.min(filteredPosts.length, visibleEndIndex + offset);
-    const nextStart = Math.max(0, nextEnd - currentWindowSize);
-    setVisibleStartIndex(nextStart);
-    setVisibleEndIndex(nextEnd);
+    if (offset + posts.length >= total) return;
+    const newOffset = Math.min(total - 1, offset + skipAmount);
+    const fetchLimit = Math.min(currentWindowSize, total - newOffset);
+    setOffset(newOffset);
+    setPosts([]);
+    setLoading(true);
+    fetchPosts(newOffset, fetchLimit);
     setTimeout(() => {
       window.scrollTo({
         top: document.documentElement.scrollHeight,
@@ -384,8 +427,8 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   }
 
   function searchUser(username: string) {
-    setVisibleStartIndex(0);
-    setVisibleEndIndex(POSTS_PER_LOAD);
+    setOffset(0);
+    setPosts([]);
     setLoading(true);
 
     const fromUserRegex = /\s*from:\s*(\S+)\s*/i;
@@ -400,36 +443,40 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     }
 
     window.scrollTo(0, 0);
-    setTimeout(() => setLoading(false), 100);
   }
 
   function gotoContext(id: number) {
-    const postIndex = posts.findIndex((post) => post.id === id);
-    if (postIndex === -1) return;
-
-    const windowSize = 10;
     skipPaginationResetRef.current = true;
     setInputValue("");
-    setVisibleStartIndex(Math.max(0, postIndex - windowSize));
-    setVisibleEndIndex(Math.min(posts.length, postIndex + windowSize + 1));
-    setHighlightedPostId(id);
+    setPosts([]);
+    setLoading(true);
 
-    setTimeout(() => {
-      const maxAttempts = 20;
-      let attempt = 0;
-      const interval = setInterval(() => {
-        const element = document.getElementById(`post-${id}`);
-        if (element) {
-          clearInterval(interval);
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-          setTimeout(() => {
-            setHighlightedPostId((current) => (current === id ? 0 : current));
-          }, 2000);
-        } else if (++attempt >= maxAttempts) {
-          clearInterval(interval);
-        }
-      }, 100);
-    }, 50);
+    fetch(`/api/posts?context=${id}&window=10`)
+      .then((res) => res.json())
+      .then((data: ApiResponse) => {
+        setPosts(data.posts);
+        setTotal(data.total);
+        setOffset(data.offset);
+        setLoading(false);
+        setHighlightedPostId(id);
+
+        setTimeout(() => {
+          const maxAttempts = 20;
+          let attempt = 0;
+          const interval = setInterval(() => {
+            const element = document.getElementById(`post-${id}`);
+            if (element) {
+              clearInterval(interval);
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+              setTimeout(() => {
+                setHighlightedPostId((current) => (current === id ? 0 : current));
+              }, 2000);
+            } else if (++attempt >= maxAttempts) {
+              clearInterval(interval);
+            }
+          }, 100);
+        }, 50);
+      });
   }
 
   return (
@@ -463,22 +510,22 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
         )}
 
         <div className={styles.postCount}>
-          {loading || posts.length === 0 ? (
+          {loading || !initialLoadDoneRef.current ? (
             <p>Loading</p>
-          ) : filteredPosts.length === 0 ? (
+          ) : total === 0 ? (
             <p>No posts found</p>
-          ) : filteredPosts.length === 1 ? (
+          ) : total === 1 ? (
             <p>Showing one single lonely post</p>
           ) : (
-            <p>Showing {filteredPosts.length.toLocaleString()} posts</p>
+            <p>Showing {total.toLocaleString()} posts</p>
           )}
         </div>
 
-        {visibleStartIndex > 0 && (
+        {offset > 0 && (
           <div ref={topSentinelRef} className={styles.sentinel} />
         )}
 
-        {loading || posts.length === 0
+        {loading || !initialLoadDoneRef.current
           ? Array.from({ length: SKELETON_COUNT }, (_, i) => (
               <div key={i} className={`${postStyles.post} ${postStyles["post--skeleton"]}`}>
                 <div
@@ -510,7 +557,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
               />
             ))}
 
-        {visibleEndIndex < filteredPosts.length && (
+        {offset + posts.length < total && (
           <div ref={bottomSentinelRef} className={styles.sentinel} />
         )}
 

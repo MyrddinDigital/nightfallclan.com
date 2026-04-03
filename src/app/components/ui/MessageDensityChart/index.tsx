@@ -708,7 +708,7 @@ export default function MessageDensityChart() {
     if (filteredTimestampsRef.current) return filteredTimestampsRef.current;
     if (!filteredTimestampsPromiseRef.current) {
       filteredTimestampsPromiseRef.current = fetch(
-        "/data/rawTimestampsFiltered.json"
+        "/api/timestamps?filterBanned=true"
       )
         .then((res) => res.json())
         .then((raw: number[]) => {
@@ -773,7 +773,7 @@ export default function MessageDensityChart() {
       if (destroyed) return;
       ApexChartsRef.current = ApexCharts;
 
-      const res = await fetch("/data/rawTimestamps.json");
+      const res = await fetch("/api/timestamps");
       const raw: number[] = await res.json();
       if (destroyed) return;
 
