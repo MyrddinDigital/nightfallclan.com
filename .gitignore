@@ -27,6 +27,9 @@ npm-debug.log*
 .claude
 .codex
 
+# SQLite database (build artifact)
+public/data/nfc.db
+
 # TS auto-generated files
 tsconfig.tsbuildinfo
 *.d.ts
