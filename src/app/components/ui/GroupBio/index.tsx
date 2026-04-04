@@ -24,7 +24,7 @@ const logos = {
 const forts = {
   "2010-03-10": "/forts/solstice.png",
   "2011-09-25": "/forts/topixa.jpg",
-  "2018-09-17": "/forts/noctem.jpg",
+  "2018-09-17": "/forts/noctem.png",
 };
 
 const owners = {
