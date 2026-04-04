@@ -20,17 +20,18 @@ export default function CloudWatchRum() {
     }
 
     const config: AwsRumConfig = {
+      sessionSampleRate: 1,
       allowCookies: true,
       enableXRay: false,
-      sessionSampleRate: 1,
       telemetries: ["errors", "performance", "http"],
-      signing: false,
+      signing: true,
     };
 
     try {
       rumClient = new AwsRum(appMonitorId, appVersion, region, config);
     } catch {
       // Avoid impacting app runtime if monitoring initialization fails.
+      console.error("Failed to initialize CloudWatch RUM client");
     }
   }, []);
 
