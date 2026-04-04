@@ -37,6 +37,13 @@ function isPutRumEventsPayload(
 }
 
 export async function POST(request: NextRequest) {
+  return forwardRumRequest(request);
+}
+
+export async function forwardRumRequest(
+  request: NextRequest,
+  monitorIdFromPath?: string,
+) {
   try {
     const payload = await request.json();
 
@@ -47,7 +54,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const monitorId = payload.Id ?? payload.AppMonitorDetails?.id ?? fallbackMonitorId;
+    const monitorId =
+      monitorIdFromPath ??
+      payload.Id ??
+      payload.AppMonitorDetails?.id ??
+      fallbackMonitorId;
     if (!monitorId) {
       return NextResponse.json(
         { message: "Missing app monitor ID for RUM proxy." },
