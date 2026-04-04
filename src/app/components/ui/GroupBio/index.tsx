@@ -18,11 +18,13 @@ const logos = {
   "2010-03-10": "/logos/2010.png",
   "2011-09-10": "/logos/2011.png",
   "2015-01-01": "/logos/2015.png",
+  "2018-09-17": "/logos/2018.png",
 };
 
 const forts = {
   "2010-03-10": "/forts/solstice.png",
   "2011-09-25": "/forts/topixa.jpg",
+  "2018-09-17": "/forts/noctem.jpg",
 };
 
 const owners = {
