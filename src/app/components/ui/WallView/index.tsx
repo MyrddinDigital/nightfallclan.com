@@ -22,6 +22,7 @@ const POSTS_PER_LOAD = 20;
 const POSTS_PER_SKIP_SMALL = 100;
 const POSTS_PER_SKIP_LARGE = 1000;
 const SKELETON_COUNT = 15;
+const MAX_POSTS = 40;
 
 type WallViewProps = {
   onLatestDateShownChange?: (timestamp: number) => void;
@@ -159,14 +160,20 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
         const data: ApiResponse = await res.json();
 
         if (append === "top") {
-          setPosts((prev) => [...data.posts, ...prev]);
+          const combined = [...data.posts, ...postsRef.current];
+          const trimmed = combined.length > MAX_POSTS ? combined.slice(0, MAX_POSTS) : combined;
+          setPosts(trimmed);
+          setOffset(fetchOffset);
         } else if (append === "bottom") {
-          setPosts((prev) => [...prev, ...data.posts]);
+          const combined = [...postsRef.current, ...data.posts];
+          const trimCount = Math.max(0, combined.length - MAX_POSTS);
+          setPosts(trimCount > 0 ? combined.slice(trimCount) : combined);
+          if (trimCount > 0) setOffset((o) => o + trimCount);
         } else {
           setPosts(data.posts);
+          setOffset(fetchOffset);
         }
         setTotal(data.total);
-        setOffset(append === "top" ? fetchOffset : append === "bottom" ? offset : fetchOffset);
         setLoading(false);
         initialLoadDoneRef.current = true;
       } catch (e: unknown) {
@@ -174,7 +181,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
         setLoading(false);
       }
     },
-    [query, queryUser, dateFilter, offset, setLoading]
+    [query, queryUser, dateFilter, setLoading]
   );
 
   // Initial fetch and re-fetch when search changes
@@ -205,14 +212,6 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     }
   }, [query, queryUser, dateFilter, fetchPosts, setLoading]);
 
-  // Control body overflow during loading
-  useEffect(() => {
-    document.body.style.overflow = loading ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [loading]);
-
   // Sync URL with search
   useEffect(() => {
     const currentSearch = searchParams.get("search") ?? "";
@@ -231,42 +230,101 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   const showJumpToNewest = offset + posts.length < total;
   const hasFilter = !!(queryUser || query || dateFilter);
 
-  // Scroll position preservation ref for prepending
-  const scrollHeightBeforePrepend = useRef<number | null>(null);
+  // Anchor-based scroll preservation for top prepend.
+  // Records the first visible post's offsetTop before the prepend so we can compute the
+  // exact shift after the DOM update — independent of how much was trimmed at the bottom.
+  const scrollAnchorRef = useRef<{ id: number; offsetTopBefore: number; scrollTopBefore: number } | null>(null);
+
+  // Deferred scroll direction after navigation fetches complete
+  // "top-absolute" / "bottom-absolute" = window.scrollTo (used by jump, no sentinel at those positions)
+  // "top" / "bottom" = scrollIntoView on first/last post (used by skip, keeps 1px sentinel off-screen)
+  const pendingScrollRef = useRef<"top" | "bottom" | "top-absolute" | "bottom-absolute" | null>(null);
+
+  // Stable refs so handleLoadTop/Bottom never need offset/posts/total as useCallback deps,
+  // preventing the observer from reconnecting (and re-firing) whenever those values change.
+  const offsetRef = useRef(offset);
+  offsetRef.current = offset;
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
+  const totalRef = useRef(total);
+  totalRef.current = total;
 
   const handleLoadTop = useCallback(() => {
-    if (offset <= 0) return;
-    scrollHeightBeforePrepend.current = document.documentElement.scrollHeight;
-    const newOffset = Math.max(0, offset - POSTS_PER_LOAD);
-    const fetchCount = offset - newOffset;
+    if (offsetRef.current <= 0) return;
+    const anchorId = postsRef.current[0]?.id;
+    if (anchorId !== undefined) {
+      const el = document.getElementById(`post-${anchorId}`);
+      scrollAnchorRef.current = {
+        id: anchorId,
+        offsetTopBefore: el?.offsetTop ?? 0,
+        scrollTopBefore: document.documentElement.scrollTop,
+      };
+    }
+    const newOffset = Math.max(0, offsetRef.current - POSTS_PER_LOAD);
+    const fetchCount = offsetRef.current - newOffset;
     setOffset(newOffset);
     fetchPosts(newOffset, fetchCount, "top");
-  }, [offset, fetchPosts]);
+  }, [fetchPosts]);
 
-  // Preserve scroll position after prepending
+  // Preserve scroll position after prepending using the anchor post's shift.
+  // scrollTop += (anchorPost.offsetTop_after - anchorPost.offsetTop_before)
+  // This is correct even when bottom posts are trimmed, because we only measure
+  // the movement of content above the viewport, not the net page height change.
   useLayoutEffect(() => {
-    if (scrollHeightBeforePrepend.current !== null) {
-      const oldHeight = scrollHeightBeforePrepend.current;
-      const newHeight = document.documentElement.scrollHeight;
-      window.scrollTo(0, document.documentElement.scrollTop + (newHeight - oldHeight));
-      scrollHeightBeforePrepend.current = null;
-    }
+    if (scrollAnchorRef.current === null) return;
+    const { id, offsetTopBefore, scrollTopBefore } = scrollAnchorRef.current;
+    scrollAnchorRef.current = null;
+    const el = document.getElementById(`post-${id}`);
+    if (!el) return;
+    window.scrollTo(0, scrollTopBefore + (el.offsetTop - offsetTopBefore));
   }, [posts]);
 
+  // Execute deferred navigation scroll after posts are rendered
+  useLayoutEffect(() => {
+    if (pendingScrollRef.current === null || loading || posts.length === 0) return;
+    const dir = pendingScrollRef.current;
+    pendingScrollRef.current = null;
+
+    if (dir === "top-absolute") {
+      window.scrollTo({ top: 0 });
+    } else if (dir === "bottom-absolute") {
+      window.scrollTo({ top: document.documentElement.scrollHeight });
+    } else if (dir === "top") {
+      // At the very beginning there's no top sentinel — scroll to the page edge.
+      // Otherwise use scrollIntoView so the 1px sentinel stays just off-screen.
+      if (offset <= 0) {
+        window.scrollTo({ top: 0 });
+      } else {
+        const firstPost = document.getElementById(`post-${posts[0].id}`);
+        firstPost ? firstPost.scrollIntoView({ block: "start" }) : window.scrollTo({ top: 0 });
+      }
+    } else {
+      // At the very end there's no bottom sentinel — scroll to the page edge.
+      // Otherwise use scrollIntoView so the 1px sentinel stays just off-screen.
+      if (offset + posts.length >= total) {
+        window.scrollTo({ top: document.documentElement.scrollHeight });
+      } else {
+        const lastPost = document.getElementById(`post-${posts[posts.length - 1].id}`);
+        lastPost ? lastPost.scrollIntoView({ block: "end" }) : window.scrollTo({ top: document.documentElement.scrollHeight });
+      }
+    }
+  }, [posts, loading]);
+
   const handleLoadBottom = useCallback(() => {
-    if (offset + posts.length >= total) return;
-    const newOffset = offset + posts.length;
-    fetchPosts(newOffset, POSTS_PER_LOAD, "bottom");
-  }, [offset, posts.length, total, fetchPosts]);
+    const currentOffset = offsetRef.current;
+    const currentLength = postsRef.current.length;
+    if (currentOffset + currentLength >= totalRef.current) return;
+    fetchPosts(currentOffset + currentLength, POSTS_PER_LOAD, "bottom");
+  }, [fetchPosts]);
 
   const topSentinelRef = useInfiniteScroll(
     "top",
-    offset > 0,
+    !loading && offset > 0,
     handleLoadTop
   );
   const bottomSentinelRef = useInfiniteScroll(
     "bottom",
-    offset + posts.length < total,
+    !loading && offset + posts.length < total,
     handleLoadBottom
   );
 
@@ -370,27 +428,15 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   }, []);
 
   function jumpToOldest() {
-    setOffset(0);
-    setPosts([]);
     setLoading(true);
+    pendingScrollRef.current = "top-absolute";
     fetchPosts(0, POSTS_PER_LOAD);
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }, 50);
   }
 
   function jumpToNewest() {
-    const newOffset = Math.max(0, total - POSTS_PER_LOAD);
-    setOffset(newOffset);
-    setPosts([]);
     setLoading(true);
-    fetchPosts(newOffset, POSTS_PER_LOAD);
-    setTimeout(() => {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 50);
+    pendingScrollRef.current = "bottom-absolute";
+    fetchPosts(Math.max(0, total - POSTS_PER_LOAD), POSTS_PER_LOAD);
   }
 
   function skipPosts(skipAmount: number) {
@@ -401,29 +447,17 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     if (skipAmount < 0) {
       if (offset <= 0) return;
       const newOffset = Math.max(0, offset + skipAmount);
-      setOffset(newOffset);
-      setPosts([]);
       setLoading(true);
+      pendingScrollRef.current = "top";
       fetchPosts(newOffset, Math.min(currentWindowSize, total - newOffset));
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }, 50);
       return;
     }
 
     if (offset + posts.length >= total) return;
     const newOffset = Math.min(total - 1, offset + skipAmount);
-    const fetchLimit = Math.min(currentWindowSize, total - newOffset);
-    setOffset(newOffset);
-    setPosts([]);
     setLoading(true);
-    fetchPosts(newOffset, fetchLimit);
-    setTimeout(() => {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 50);
+    pendingScrollRef.current = "bottom";
+    fetchPosts(newOffset, Math.min(currentWindowSize, total - newOffset));
   }
 
   function searchUser(username: string) {
@@ -446,12 +480,15 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
   }
 
   function gotoContext(id: number) {
+    fetchControllerRef.current?.abort();
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
     skipPaginationResetRef.current = true;
     setInputValue("");
-    setPosts([]);
     setLoading(true);
 
-    fetch(`/api/posts?context=${id}&window=10`)
+    fetch(`/api/posts?context=${id}&window=10`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data: ApiResponse) => {
         setPosts(data.posts);
@@ -476,6 +513,10 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
             }
           }, 100);
         }, 50);
+      })
+      .catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setLoading(false);
       });
   }
 
@@ -521,7 +562,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
           )}
         </div>
 
-        {offset > 0 && (
+        {!loading && offset > 0 && (
           <div ref={topSentinelRef} className={styles.sentinel} />
         )}
 
@@ -557,7 +598,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
               />
             ))}
 
-        {offset + posts.length < total && (
+        {!loading && offset + posts.length < total && (
           <div ref={bottomSentinelRef} className={styles.sentinel} />
         )}
 
