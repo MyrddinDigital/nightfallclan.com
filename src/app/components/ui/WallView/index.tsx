@@ -11,6 +11,7 @@ import {
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@context/SearchContext";
 import { useSearchParser } from "@hooks/useSearchParser";
+import { prefetchAvatars } from "@hooks/useAvatarCache";
 import { useScrollDirection } from "@hooks/useScrollDirection";
 import { useInfiniteScroll } from "@hooks/useInfiniteScroll";
 import PostCard from "@ui/PostCard";
@@ -175,6 +176,12 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
         if (!res.ok) return;
         const data: ApiResponse = await res.json();
 
+        void prefetchAvatars(
+          data.posts
+            .map((post) => post.poster?.user?.userId)
+            .filter((userId): userId is number => typeof userId === "number")
+        );
+
         if (append === "top") {
           const combined = [...data.posts, ...postsRef.current];
           const trimmed = combined.length > MAX_POSTS ? combined.slice(0, MAX_POSTS) : combined;
@@ -248,7 +255,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
 
   // Anchor-based scroll preservation for top prepend.
   // Records the first visible post's offsetTop before the prepend so we can compute the
-  // exact shift after the DOM update — independent of how much was trimmed at the bottom.
+  // exact shift after the DOM update - independent of how much was trimmed at the bottom.
   const scrollAnchorRef = useRef<{ id: number; offsetTopBefore: number; scrollTopBefore: number } | null>(null);
 
   // Deferred scroll direction after navigation fetches complete
@@ -306,7 +313,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     } else if (dir === "bottom-absolute") {
       window.scrollTo({ top: document.documentElement.scrollHeight });
     } else if (dir === "top") {
-      // At the very beginning there's no top sentinel — scroll to the page edge.
+      // At the very beginning there's no top sentinel - scroll to the page edge.
       // Otherwise use scrollIntoView so the 1px sentinel stays just off-screen.
       if (offset <= 0) {
         window.scrollTo({ top: 0 });
@@ -315,7 +322,7 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
         firstPost ? firstPost.scrollIntoView({ block: "start" }) : window.scrollTo({ top: 0 });
       }
     } else {
-      // At the very end there's no bottom sentinel — scroll to the page edge.
+      // At the very end there's no bottom sentinel - scroll to the page edge.
       // Otherwise use scrollIntoView so the 1px sentinel stays just off-screen.
       if (offset + posts.length >= total) {
         window.scrollTo({ top: document.documentElement.scrollHeight });
@@ -509,6 +516,11 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     fetch(`/api/posts?context=${id}&window=10`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data: ApiResponse) => {
+        void prefetchAvatars(
+          data.posts
+            .map((post) => post.poster?.user?.userId)
+            .filter((userId): userId is number => typeof userId === "number")
+        );
         setPosts(data.posts);
         setTotal(data.total);
         setOffset(data.offset);
