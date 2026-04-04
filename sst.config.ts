@@ -18,7 +18,7 @@ export default $config({
       name: apexDomain,
     });
 
-    const wallRedirect = new sst.aws.Router("WallRedirect", {
+    const wallRedirect = new sst.aws.Router("WallSubdomainRedirect", {
       domain: {
         name: wallDomain,
         dns: sst.aws.dns({
@@ -48,7 +48,7 @@ export default $config({
     });
     wallRedirect.route("/", wallDestination);
 
-    const appRumMonitor = new aws.rum.AppMonitor("WallSiteRumMonitor", {
+    const appRumMonitor = new aws.rum.AppMonitor("NightfallClanNextjsAppRumMonitor", {
       name: rumMonitorName,
       domain: apexDomain,
       cwLogEnabled: false,
@@ -57,7 +57,7 @@ export default $config({
       },
     });
 
-    new sst.aws.Nextjs("WallSite", {
+    new sst.aws.Nextjs("NightfallClanNextjsApp", {
       domain: {
         name: apexDomain,
         dns: sst.aws.dns({
