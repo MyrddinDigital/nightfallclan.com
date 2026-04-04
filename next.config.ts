@@ -11,6 +11,10 @@ const csp = [
     rumRegion +
     ".amazonaws.com https://dataplane.rum." +
     rumRegion +
+    ".amazonaws.com https://cognito-identity." +
+    rumRegion +
+    ".amazonaws.com https://sts." +
+    rumRegion +
     ".amazonaws.com",
   "img-src 'self' data: blob: https:",
   "style-src 'self' 'unsafe-inline' https:",

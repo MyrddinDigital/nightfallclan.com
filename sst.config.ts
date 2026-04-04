@@ -57,6 +57,60 @@ export default $config({
       },
     });
 
+    const rumIdentityPool = new aws.cognito.IdentityPool("NFCRumIdentityPool", {
+      identityPoolName: `${rumMonitorName}-identity-pool`,
+      allowUnauthenticatedIdentities: true,
+    });
+
+    const rumUnauthRole = new aws.iam.Role("NFCRumUnauthRole", {
+      name: `${rumMonitorName}-unauth-role`,
+      assumeRolePolicy: rumIdentityPool.id.apply((identityPoolId) =>
+        JSON.stringify({
+          Version: "2012-10-17",
+          Statement: [
+            {
+              Effect: "Allow",
+              Principal: {
+                Federated: "cognito-identity.amazonaws.com",
+              },
+              Action: "sts:AssumeRoleWithWebIdentity",
+              Condition: {
+                StringEquals: {
+                  "cognito-identity.amazonaws.com:aud": identityPoolId,
+                },
+                "ForAnyValue:StringLike": {
+                  "cognito-identity.amazonaws.com:amr": "unauthenticated",
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    });
+
+    new aws.iam.RolePolicy("NFCRumPutEventsPolicy", {
+      role: rumUnauthRole.id,
+      policy: appRumMonitor.arn.apply((appMonitorArn) =>
+        JSON.stringify({
+          Version: "2012-10-17",
+          Statement: [
+            {
+              Effect: "Allow",
+              Action: "rum:PutRumEvents",
+              Resource: appMonitorArn,
+            },
+          ],
+        }),
+      ),
+    });
+
+    new aws.cognito.IdentityPoolRoleAttachment("NFCRumIdentityPoolRoles", {
+      identityPoolId: rumIdentityPool.id,
+      roles: {
+        unauthenticated: rumUnauthRole.arn,
+      },
+    });
+
     new sst.aws.Nextjs("NFCNextApp", {
       domain: {
         name: apexDomain,
@@ -69,6 +123,8 @@ export default $config({
         NEXT_PUBLIC_CLOUDWATCH_RUM_APP_MONITOR_ID: appRumMonitor.appMonitorId,
         NEXT_PUBLIC_CLOUDWATCH_RUM_APP_MONITOR_NAME: appRumMonitor.name,
         NEXT_PUBLIC_CLOUDWATCH_RUM_REGION: awsRegion.region,
+        NEXT_PUBLIC_CLOUDWATCH_RUM_IDENTITY_POOL_ID: rumIdentityPool.id,
+        NEXT_PUBLIC_CLOUDWATCH_RUM_GUEST_ROLE_ARN: rumUnauthRole.arn,
       },
     });
 
@@ -79,6 +135,8 @@ export default $config({
       rumAppMonitorName: appRumMonitor.name,
       rumAppMonitorId: appRumMonitor.appMonitorId,
       rumAppMonitorArn: appRumMonitor.arn,
+      rumIdentityPoolId: rumIdentityPool.id,
+      rumGuestRoleArn: rumUnauthRole.arn,
     };
   },
 });
