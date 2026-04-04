@@ -5,8 +5,6 @@ import {
   type PutRumEventsCommandInput,
 } from "@aws-sdk/client-rum";
 
-export const runtime = "nodejs";
-
 const rumRegion =
   process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_REGION ??
   process.env.AWS_REGION ??

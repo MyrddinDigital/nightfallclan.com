@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { forwardRumRequest, runtime } from "../route";
-
-export { runtime };
+import { forwardRumRequest } from "../route";
 
 export async function POST(
   request: NextRequest,
@@ -20,4 +18,3 @@ export async function GET() {
     { status: 405 },
   );
 }
-
