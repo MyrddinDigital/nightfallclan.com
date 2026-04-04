@@ -35,6 +35,22 @@ type ApiResponse = {
   contextIndex?: number;
 };
 
+function isSameCalendarDay(dateA: Date, dateB: Date): boolean {
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+}
+
+function formatDaySeparatorDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
 function SkipArrowIcon({
   direction,
   hasSecondChevron,
@@ -589,16 +605,30 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
                 </div>
               </div>
             ))
-          : currentPagePosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                highlighted={post.id === highlightedPostId}
-                hasFilter={hasFilter}
-                onSearchUser={searchUser}
-                onGotoContext={gotoContext}
-              />
-            ))}
+          : currentPagePosts.map((post, index) => {
+              const currentPostDate = new Date(post.created);
+              const previousPost = index > 0 ? currentPagePosts[index - 1] : null;
+              const shouldShowSeparator =
+                previousPost !== null &&
+                !isSameCalendarDay(currentPostDate, new Date(previousPost.created));
+
+              return (
+                <div key={post.id}>
+                  {shouldShowSeparator && (
+                    <div className={styles.daySeparator} role="separator" aria-label={formatDaySeparatorDate(currentPostDate)}>
+                      <span>{formatDaySeparatorDate(currentPostDate)}</span>
+                    </div>
+                  )}
+                  <PostCard
+                    post={post}
+                    highlighted={post.id === highlightedPostId}
+                    hasFilter={hasFilter}
+                    onSearchUser={searchUser}
+                    onGotoContext={gotoContext}
+                  />
+                </div>
+              );
+            })}
 
         {!loading && offset + posts.length < total && (
           <div ref={bottomSentinelRef} className={styles.sentinel} />
