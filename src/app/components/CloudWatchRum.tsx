@@ -21,6 +21,7 @@ export default function CloudWatchRum() {
 
     const config: AwsRumConfig = {
       sessionSampleRate: 1,
+      endpoint: "https://dataplane.rum.us-east-1.amazonaws.com",
       allowCookies: true,
       enableXRay: false,
       telemetries: ["errors", "performance", "http"],
