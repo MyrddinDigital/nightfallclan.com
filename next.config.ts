@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
+import { getEasternBuildTimestamp } from "./src/app/utils/date";
 
 const nextConfig: NextConfig = {
   env: {
-    NEXT_PUBLIC_BUILD_TIMESTAMP: new Date().toISOString(),
+    NEXT_PUBLIC_BUILD_TIMESTAMP: getEasternBuildTimestamp(),
   },
   sassOptions: {},
   serverExternalPackages: ["better-sqlite3"],
