@@ -48,7 +48,7 @@ export default $config({
     });
     wallRedirect.route("/", wallDestination);
 
-    const appRumMonitor = new aws.rum.AppMonitor("NightfallClanNextjsAppRumMonitor", {
+    const appRumMonitor = new aws.rum.AppMonitor("NFCNextAppRumMonitor", {
       name: rumMonitorName,
       domain: apexDomain,
       cwLogEnabled: false,
@@ -57,7 +57,7 @@ export default $config({
       },
     });
 
-    new sst.aws.Nextjs("NightfallClanNextjsApp", {
+    new sst.aws.Nextjs("NFCNextApp", {
       domain: {
         name: apexDomain,
         dns: sst.aws.dns({
