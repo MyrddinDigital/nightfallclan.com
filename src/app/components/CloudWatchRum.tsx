@@ -15,10 +15,9 @@ export default function CloudWatchRum() {
     const region = process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_REGION;
     const identityPoolId =
       process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_IDENTITY_POOL_ID;
-    const guestRoleArn = process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_GUEST_ROLE_ARN;
     const appVersion = process.env.NEXT_PUBLIC_BUILD_TIMESTAMP ?? "0.0.0";
 
-    if (!appMonitorId || !region || !identityPoolId || !guestRoleArn) {
+    if (!appMonitorId || !region || !identityPoolId) {
       return;
     }
 
@@ -30,7 +29,6 @@ export default function CloudWatchRum() {
       telemetries: ["errors", "performance", "http"],
       signing: true,
       identityPoolId,
-      guestRoleArn,
     };
 
     try {
