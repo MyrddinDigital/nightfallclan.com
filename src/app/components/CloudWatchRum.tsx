@@ -25,7 +25,7 @@ export default function CloudWatchRum() {
       allowCookies: true,
       enableXRay: false,
       telemetries: ["errors", "performance", "http"],
-      signing: true,
+      signing: false,
     };
 
     try {
