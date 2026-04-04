@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "apexcharts": "^5.10.4",
+    "aws-rum-web": "^2.0.0",
     "better-sqlite3": "^12.8.0",
     "next": "^16.2.2",
     "react": "^19.1.0",

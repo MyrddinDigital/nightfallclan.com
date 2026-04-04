@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Nav from "@ui/Nav";
 import { SearchProvider } from "@context/SearchContext";
+import CloudWatchRum from "./components/CloudWatchRum";
 import "./globals.scss";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <CloudWatchRum />
         <SearchProvider>
           <div id="__next">
             <Nav />
