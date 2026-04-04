@@ -11,7 +11,6 @@ export default function SearchBar() {
     setInputValue("");
     setLoading(true);
     window.scrollTo(0, 0);
-    setTimeout(() => setLoading(false), 100);
     document.getElementById("search-posts")?.focus();
   }
 

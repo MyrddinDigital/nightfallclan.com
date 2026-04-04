@@ -454,9 +454,11 @@ export default function WallView({ onLatestDateShownChange }: WallViewProps) {
     }
 
     if (offset + posts.length >= total) return;
-    const newOffset = Math.min(total - 1, offset + skipAmount);
+    const maxOffset = Math.max(0, total - currentWindowSize);
+    const newOffset = Math.min(maxOffset, offset + skipAmount);
+    const reachedEnd = newOffset >= maxOffset;
     setLoading(true);
-    pendingScrollRef.current = "bottom";
+    pendingScrollRef.current = reachedEnd ? "bottom" : "top";
     fetchPosts(newOffset, Math.min(currentWindowSize, total - newOffset));
   }
 

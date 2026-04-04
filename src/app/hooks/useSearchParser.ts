@@ -13,7 +13,12 @@ export function useSearchParser(inputValue: string): SearchState {
 
   useEffect(() => {
     const isUserInput = document.activeElement?.tagName === "INPUT";
-    const delay = isUserInput ? 300 : 0;
+    const nextInput = inputValue.trim();
+    const prevInput = prevInputRef.current.trim();
+    const justClearedInput = nextInput === "";
+    const justStartedTyping = prevInput === "" && nextInput !== "";
+    const delay =
+      isUserInput && !justClearedInput && !justStartedTyping ? 300 : 0;
 
     const timeout = setTimeout(() => {
       setSearchState(parseSearchInput(inputValue));
