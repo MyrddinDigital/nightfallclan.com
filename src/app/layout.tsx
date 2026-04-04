@@ -15,8 +15,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const buildTimestamp = process.env.NEXT_PUBLIC_BUILD_TIMESTAMP ?? "";
+
   return (
-    <html lang="en">
+    <html lang="en" data-build-timestamp={buildTimestamp}>
       <head>
         <meta
           name="viewport"
