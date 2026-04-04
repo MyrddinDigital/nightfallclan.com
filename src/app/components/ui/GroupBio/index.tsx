@@ -16,7 +16,12 @@ type TransitionState<T> = {
 
 const logos = {
   "2010-03-10": "/logos/2010.png",
-  "2011-09-10": "/logos/2011.png",
+  "2011-03-16": "/logos/2011a.png",
+  "2011-07-16": "/logos/2011b.png",
+  "2011-08-26": "/logos/2011c.png",
+  "2012-11-16": "/logos/2011tg.png",
+  "2012-11-24": "/logos/2011c.png",
+  "2013-05-03": "/logos/2013.png",
   "2015-01-01": "/logos/2015.png",
   "2018-09-17": "/logos/2018.png",
 };
