@@ -51,7 +51,6 @@ export default $config({
     const appRumMonitor = new aws.rum.AppMonitor("WallSiteRumMonitor", {
       name: rumMonitorName,
       domain: apexDomain,
-      domainLists: [apexDomain, `www.${apexDomain}`],
       cwLogEnabled: false,
       tags: {
         App: "nightfallclan.com",
