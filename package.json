@@ -12,6 +12,7 @@
     "deploy": "sst deploy --stage prod"
   },
   "dependencies": {
+    "@aws-sdk/client-rum": "^3.1024.0",
     "apexcharts": "^5.10.4",
     "aws-rum-web": "^2.0.0",
     "better-sqlite3": "^12.8.0",

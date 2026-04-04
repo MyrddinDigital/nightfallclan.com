@@ -1,21 +1,10 @@
 import type { NextConfig } from "next";
 import { getEasternBuildTimestamp } from "./src/app/utils/date";
 
-const rumRegion = process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_REGION ?? "us-east-1";
 const csp = [
   "default-src 'self' https: data: blob:",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://client.rum." +
-    rumRegion +
-    ".amazonaws.com",
-  "connect-src 'self' https://client.rum." +
-    rumRegion +
-    ".amazonaws.com https://dataplane.rum." +
-    rumRegion +
-    ".amazonaws.com https://cognito-identity." +
-    rumRegion +
-    ".amazonaws.com https://sts." +
-    rumRegion +
-    ".amazonaws.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "connect-src 'self'",
   "img-src 'self' data: blob: https:",
   "style-src 'self' 'unsafe-inline' https:",
   "font-src 'self' data: https:",

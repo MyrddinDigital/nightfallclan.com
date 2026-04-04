@@ -13,22 +13,19 @@ export default function CloudWatchRum() {
 
     const appMonitorId = process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_APP_MONITOR_ID;
     const region = process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_REGION;
-    const identityPoolId =
-      process.env.NEXT_PUBLIC_CLOUDWATCH_RUM_IDENTITY_POOL_ID;
     const appVersion = process.env.NEXT_PUBLIC_BUILD_TIMESTAMP ?? "0.0.0";
 
-    if (!appMonitorId || !region || !identityPoolId) {
+    if (!appMonitorId || !region) {
       return;
     }
 
     const config: AwsRumConfig = {
       sessionSampleRate: 1,
-      endpoint: `https://dataplane.rum.${region}.amazonaws.com`,
+      endpoint: "/api/rum",
       allowCookies: true,
       enableXRay: false,
       telemetries: ["errors", "performance", "http"],
-      signing: true,
-      identityPoolId,
+      signing: false,
     };
 
     try {
