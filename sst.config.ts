@@ -52,9 +52,8 @@ export default $config({
       name: rumMonitorName,
       domain: apexDomain,
       cwLogEnabled: false,
-      tags: {
-        App: "nightfallclan.com",
-        Stage: $app.stage,
+      appMonitorConfiguration: {
+        sessionSampleRate: 1,
       },
     });
 
@@ -69,7 +68,7 @@ export default $config({
       environment: {
         NEXT_PUBLIC_CLOUDWATCH_RUM_APP_MONITOR_ID: appRumMonitor.appMonitorId,
         NEXT_PUBLIC_CLOUDWATCH_RUM_APP_MONITOR_NAME: appRumMonitor.name,
-        NEXT_PUBLIC_CLOUDWATCH_RUM_REGION: awsRegion.name,
+        NEXT_PUBLIC_CLOUDWATCH_RUM_REGION: awsRegion.region,
       },
     });
 
